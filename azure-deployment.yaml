@@ -1,0 +1,58 @@
+trigger:
+- none
+
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+  - stage: deploy
+    displayName: deploy
+    jobs:
+      - deployment: Deploy
+        displayName: Deploy Basic Terraform Infrastructure
+        environment: Dev
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self             
+                - task: TerraformInstaller@0
+                  displayName: Installing Terraform
+                  inputs:
+                    terraformVersion: 'latest'
+                    
+                - task: TerraformTaskV3@3
+                  displayName: Init Terraform
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'init'
+                    
+                    backendServiceArm: 'SC-DEV'
+                    workingDirectory: 'Terraform'
+                    backendAzureRmResourceGroupName: 'Devops-RG'
+                    backendAzureRmStorageAccountName: 'devopstrainingstorage'
+                    backendAzureRmContainerName: 'kunal-container'
+                    backendAzureRmKey: 'terraform.tfstate'
+
+                - task: TerraformTaskV3@3
+                  displayName: Plan Terraform
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'plan'
+                    workingDirectory: 'Terraform'
+                    environmentServiceNameAzureRM: 'SC-DEV'
+
+                - task: TerraformTaskV3@3
+                  displayName: Apply Terraform
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'apply'
+                    workingDirectory: 'Terraform'
+                    environmentServiceNameAzureRM: 'SC-DEV'
+
+                # - task: TerraformTaskV3@3
+                #   inputs:
+                #     provider: 'azurerm'
+                #     command: 'destroy'
+                #     workingDirectory: 'Terraform'
+                #     environmentServiceNameAzureRM: 'SC-DEV'
